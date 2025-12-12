@@ -530,6 +530,10 @@
             },
             
             availableRecipes() {
+                // Force reactivity by accessing values that change when multipliers change
+                // This ensures Vue recalculates this computed property when multipliers change
+                const _ = this.lista.length; // Access lista to ensure dependency
+                
                 // Receitas que não estão excluídas e não contêm ingredientes excluídos
                 return this.listaFiltrada
                     .filter(r => !this.excludedRecipes.includes(r.recipe_hash))

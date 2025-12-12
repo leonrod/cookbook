@@ -16,26 +16,58 @@ Your code is now on GitHub at: **https://github.com/leonrod/cookbook**
 4. Find and select your repository: **cookbook**
 5. Click "Connect"
 
-### Step 3: Configure Service (Auto-detected!)
-Render will automatically detect the configuration from `render.yaml`:
+### Step 3: Configure Service
 
-- **Name**: cookbook
-- **Region**: Oregon (US West)
-- **Branch**: master
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 60 wsgi:app`
-- **Plan**: Free
+Render detected Docker in your repository. Configure as follows:
 
-Just verify these settings and click **"Create Web Service"**
+#### Basic Settings
+- **Name**: `cookbook` (or any name you prefer)
+- **Language**: Docker (auto-detected)
+- **Branch**: `master`
+- **Region**: Oregon (US West) or any region you prefer
 
-### Step 4: Wait for Deployment
+#### Instance Type
+Select **Free** plan:
+- 512 MB RAM
+- 0.1 CPU
+- $0/month
+- ⚠️ Spins down after periods of inactivity
+
+#### Environment Variables
+Click "+ Add Environment Variable" and add:
+
+| Key | Value |
+|-----|-------|
+| `FLASK_ENV` | `production` |
+| `SECRET_KEY` | Click "Generate" to auto-generate |
+
+**Note**: You can leave other variables with defaults. The app will use built-in defaults.
+
+#### Advanced Settings (Optional)
+
+Expand "Advanced" section if you want to customize:
+
+- **Health Check Path**: `/health` (optional, for monitoring)
+- **Docker Command**: Leave empty (uses Dockerfile's CMD)
+- **Auto-Deploy**: On Commit (default, recommended)
+
+### Step 4: Deploy!
+
+Click **"Deploy Web Service"** at the bottom.
+
+### Step 5: Wait for Deployment
 - Deployment takes 3-5 minutes
-- You'll see logs in real-time
+- You'll see logs in real-time:
+  - Building Docker image
+  - Installing dependencies
+  - Starting Gunicorn server
 - Wait for "Your service is live 🎉"
 
-### Step 5: Access Your App!
+### Step 6: Access Your App!
 Your app will be live at:
-**https://cookbook.onrender.com** (or similar URL)
+**https://cookbook-XXXX.onrender.com**
+
+(Render will assign a unique URL)
 
 ## Important Notes
 
@@ -43,19 +75,29 @@ Your app will be live at:
 - ⚠️ **Sleeps after 15 minutes** of inactivity
 - ⏱️ Takes ~30 seconds to wake up when accessed
 - 🔄 Automatic wake-up on first request
+- 💾 SQLite database persists (included in Docker image)
 
-### To Avoid Sleeping (Optional)
-**Option 1**: Upgrade to paid plan ($7/month)
-**Option 2**: Use UptimeRobot (free) to ping every 10 minutes
+### To Avoid Sleeping
+
+**Option 1: Upgrade to Paid Plan**
+- Starter: $7/month (0.5 CPU, 512 MB RAM)
+- Standard: $25/month (1 CPU, 2 GB RAM)
+- No sleep, always online
+
+**Option 2: Use UptimeRobot (Free)**
 1. Go to https://uptimerobot.com
-2. Add new monitor
-3. URL: your Render app URL
-4. Interval: 10 minutes
+2. Sign up (free)
+3. Add new monitor:
+   - Monitor Type: HTTP(s)
+   - URL: Your Render app URL
+   - Monitoring Interval: 10 minutes
+4. UptimeRobot will ping your app every 10 minutes, keeping it awake
 
 ### Database
-- ✅ SQLite database with 875 recipes is included
+- ✅ SQLite database with 875 recipes is included in Docker image
 - ✅ Works perfectly for this application
 - ✅ No additional setup needed
+- ⚠️ Data resets on redeployment (use persistent disk for production)
 
 ## Features Included
 
@@ -71,25 +113,57 @@ Your app will be live at:
 
 ### If deployment fails:
 1. Check logs in Render dashboard
-2. Verify Python version is 3.11.0
-3. Make sure all files are committed to GitHub
+2. Look for Docker build errors
+3. Verify Dockerfile is correct
+4. Make sure all files are committed to GitHub
 
 ### If app doesn't load:
-1. Wait 30 seconds (might be waking up)
+1. Wait 30 seconds (might be waking up from sleep)
 2. Check Render logs for errors
-3. Verify environment variables are set
+3. Verify environment variables are set correctly
+4. Check Health Check status in Render dashboard
 
-## Alternative: Railway.app
+### If you see "Application failed to respond":
+1. Check if PORT environment variable is set (should be auto-set by Render)
+2. Verify Gunicorn is binding to `0.0.0.0:$PORT`
+3. Check Dockerfile CMD is correct
 
-If you prefer Railway (also free, no sleep):
+## Alternative Deployment Options
+
+### Railway.app (No Sleep on Free Tier)
+
+If you prefer Railway (also free, $5 credit/month, no sleep):
 
 1. Go to https://railway.app
 2. Sign in with GitHub
 3. Click "New Project" → "Deploy from GitHub repo"
 4. Select **cookbook**
-5. Done! Live in 2 minutes
+5. Railway will auto-detect Docker
+6. Click "Deploy"
+7. Done! Live in 2 minutes
 
-Railway gives you $5 free credit per month (enough for this app).
+**Advantages**:
+- $5 free credit per month (enough for this app)
+- No sleep on free tier
+- Faster wake-up times
+- Better for continuous use
+
+### Fly.io (Global Edge Network)
+
+For advanced users:
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Login
+flyctl auth login
+
+# Deploy
+cd /path/to/cookbook
+flyctl launch --name cookbook
+flyctl deploy
+```
 
 ## Your Repository
 
@@ -97,13 +171,28 @@ Railway gives you $5 free credit per month (enough for this app).
 **Visibility**: Private  
 **Branch**: master
 
+## Configuration Files
+
+Your repository includes:
+- ✅ `Dockerfile` - Docker image configuration
+- ✅ `docker-compose.yml` - Local development
+- ✅ `render.yaml` - Render configuration (alternative to UI)
+- ✅ `requirements.txt` - Python dependencies
+- ✅ `gunicorn.conf.py` - Production server config
+
 ## Next Steps
 
-1. Deploy on Render.com (follow steps above)
-2. Get your permanent URL
-3. Share with your friends!
-4. Enjoy your Haven & Hearth recipe calculator 🎮
+1. ✅ Complete configuration in Render.com (follow steps above)
+2. ✅ Click "Deploy Web Service"
+3. ✅ Wait 3-5 minutes for deployment
+4. ✅ Get your permanent URL
+5. ✅ (Optional) Set up UptimeRobot to avoid sleeping
+6. ✅ Share with your friends!
+7. ✅ Enjoy your Haven & Hearth recipe calculator 🎮
 
 ---
 
-**Need help?** Check the Render documentation: https://render.com/docs
+**Need help?** 
+- Check Render documentation: https://render.com/docs
+- Check deployment logs in Render dashboard
+- Open an issue on GitHub

@@ -16,7 +16,7 @@ class Config:
     DB_PATH = os.environ.get('DB_PATH') or str(BASE_DIR / 'nurglingdatabase.db')
     
     # API
-    API_RESULTS_LIMIT = int(os.environ.get('API_RESULTS_LIMIT', 50))
+    API_RESULTS_LIMIT = int(os.environ.get('API_RESULTS_LIMIT', 10000))
     API_MAX_QUERY_LENGTH = int(os.environ.get('API_MAX_QUERY_LENGTH', 500))
     
     # Logging

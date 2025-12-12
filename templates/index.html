@@ -69,6 +69,8 @@
         .exclusion-search:focus { border-color: var(--accent); outline: none; }
         .btn-exclude-filtered { background: #333; color: #ff9500; border: 1px solid #ff9500; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: bold; margin-right: 4px; }
         .btn-exclude-filtered:hover { background: #ff9500; color: black; }
+        .btn-clean-filtered { background: #333; color: #00d4ff; border: 1px solid #00d4ff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: bold; margin-right: 4px; }
+        .btn-clean-filtered:hover { background: #00d4ff; color: black; }
         .btn-exclude-all, .btn-include-all { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
         .btn-exclude-all:hover, .btn-include-all:hover { background: var(--accent); color: black; }
         .exclusion-list { max-height: 400px; overflow-y: auto; }
@@ -348,6 +350,7 @@
             </div>
             <div class="exclusion-controls">
                 <input type="text" v-model="excludedSearch" placeholder="Search excluded..." class="exclusion-search">
+                <button @click="cleanFiltered" class="btn-clean-filtered" :title="excludedSearch ? 'Remove filtered items from excluded' : 'Clear all exclusions'">Clean Filtered</button>
                 <button @click="includeAll" class="btn-include-all" title="Include all">←</button>
             </div>
             <div class="exclusion-list">
@@ -800,6 +803,29 @@
                         this.excludedRecipes.push(recipe.hash);
                     }
                 });
+                this.saveExclusions();
+            },
+            
+            cleanFiltered() {
+                if (this.excludedSearch) {
+                    // Remover apenas itens filtrados
+                    const search = this.excludedSearch.toLowerCase();
+                    
+                    // Remover ingredientes filtrados
+                    this.excludedIngredients = this.excludedIngredients.filter(ing => 
+                        !ing.toLowerCase().includes(search)
+                    );
+                    
+                    // Remover receitas filtradas
+                    this.excludedRecipes = this.excludedRecipes.filter(hash => {
+                        const recipe = this.lista.find(r => r.recipe_hash === hash);
+                        return recipe && !recipe.item_name.toLowerCase().includes(search);
+                    });
+                } else {
+                    // Sem filtro: limpar tudo
+                    this.excludedIngredients = [];
+                    this.excludedRecipes = [];
+                }
                 this.saveExclusions();
             },
             

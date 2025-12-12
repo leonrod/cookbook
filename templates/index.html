@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nurgling Cookbook: Character Engineer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.prod.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* CSS MANTIDO IGUAL */
+        :root {
+            --bg: #121212; --panel: #1e1e1e; --border: #333;
+            --accent: #42b983; --gold: #ffd700; --danger: #ff6b6b; --info: #45b7d1;
+            --text-main: #e0e0e0; --text-muted: #888;
+        }
+        body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; padding-right: 340px; transition: padding 0.3s; }
+        [v-cloak] { display: none; }
+        .planner-sidebar { position: fixed; top: 0; right: 0; width: 340px; height: 100vh; background: #181818; border-left: 1px solid var(--border); padding: 20px; box-sizing: border-box; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.5); transition: transform 0.3s ease; z-index: 1000; }
+        .planner-closed { transform: translateX(100%); }
+        .planner-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1001; background: var(--gold); color: black; border: none; padding: 15px; border-radius: 50%; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .planner-section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .planner-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9em; }
+        .char-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .char-input label { font-size: 0.7em; color: #aaa; display: block; margin-bottom: 2px; }
+        .char-input input, .char-input select { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 5px; font-size: 0.9em; border-radius: 4px; }
+        .total-highlight { font-size: 1.1em; font-weight: bold; border-bottom: 1px dashed #444; padding-bottom: 5px; margin-bottom: 10px; }
+        .sub-val { font-size: 0.8em; color: #666; display: block; text-align: right; }
+        .cart-item { background: #222; padding: 8px; border-radius: 4px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .cart-controls button { background: #333; color: white; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; }
+        .cart-controls button:hover { background: #555; }
+        .progress-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        .progress-over { background: var(--danger); }
+        .header-controls { display: grid; grid-template-columns: 1fr 280px; gap: 20px; margin-bottom: 20px; }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+        .input-group label { display: block; color: var(--text-muted); font-size: 0.75em; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; background: #111; border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; font-family: 'Roboto Mono', monospace; }
+        input:focus { border-color: var(--accent); outline: none; }
+        .btn-search { background: var(--accent); color: #000; border: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .btn-add { background: #333; color: var(--accent); border: 1px solid var(--accent); width: 30px; height: 30px; border-radius: 4px; cursor: pointer; font-size: 1.2em; line-height: 1; }
+        .btn-add:hover { background: var(--accent); color: black; }
+        .cheat-sheet { font-size: 0.85em; color: var(--text-muted); line-height: 1.6; }
+        .code-example { background: #252525; color: var(--accent); padding: 2px 6px; border-radius: 3px; cursor: pointer; border: 1px solid #333; display: inline-block; margin-bottom: 4px; font-family: 'Roboto Mono', monospace; }
+        table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 8px; overflow: hidden; margin-top: 20px; font-size: 0.95em; }
+        th { background: #252525; color: #aaa; padding: 12px; text-align: left; font-weight: 600; cursor: pointer; user-select: none; border-bottom: 2px solid var(--border); text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; }
+        th:hover { color: white; background: #333; }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        tr:hover { background: #2a2a2a; }
+        .recipe-name { font-weight: bold; font-size: 1.05em; display: block; color: white; }
+        .res-name { font-size: 0.8em; color: #666; font-family: 'Roboto Mono', monospace; }
+        .total-val { color: var(--accent); font-weight: bold; font-family: 'Roboto Mono', monospace; font-size: 1.1em; }
+        .eff-val { color: var(--gold); font-weight: bold; font-family: 'Roboto Mono', monospace; }
+        .fep-grid { display: flex; gap: 5px; flex-wrap: wrap; }
+        .fep-badge { font-size: 0.8em; padding: 3px 8px; border-radius: 4px; background: #333; border-left: 3px solid #555; }
+        .ing-list { font-size: 0.85em; color: #bbb; display: flex; flex-wrap: wrap; gap: 6px; }
+        .ing-item { background: #151515; padding: 2px 6px; border-radius: 4px; border: 1px solid #333; cursor: pointer; }
+        .ing-item:hover { border-color: var(--accent); color: white; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #121212; }
+        
+        /* Exclusion Panel Styles */
+        .exclusion-panel { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .exclusion-section { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+        .exclusion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .exclusion-header h3 { margin: 0; font-size: 1em; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+        .exclusion-count { background: #333; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; color: var(--accent); font-weight: bold; }
+        .exclusion-controls { display: flex; gap: 8px; margin-bottom: 12px; }
+        .exclusion-search { flex: 1; background: #111; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; font-size: 0.85em; }
+        .exclusion-search:focus { border-color: var(--accent); outline: none; }
+        .btn-exclude-all, .btn-include-all { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+        .btn-exclude-all:hover, .btn-include-all:hover { background: var(--accent); color: black; }
+        .exclusion-list { max-height: 400px; overflow-y: auto; }
+        .exclusion-item { background: #222; padding: 8px 10px; margin-bottom: 4px; border-radius: 4px; cursor: pointer; font-size: 0.85em; border: 1px solid #333; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .exclusion-item:hover { background: #2a2a2a; border-color: var(--accent); }
+        .exclusion-item-name { flex: 1; }
+        .exclusion-item-count { background: #333; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; color: #888; }
+        .excluded-item { background: #2a1a1a; border-color: var(--danger); }
+        .excluded-item:hover { background: #3a2020; }
+        .excluded-item .exclusion-item-name { color: var(--danger); text-decoration: line-through; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak>
+
+    <button class="planner-toggle" @click="showPlanner = !showPlanner" title="Toggle Meal Planner">
+        🛒 [[ cartTotalItems ]]
+    </button>
+
+    <div class="planner-sidebar" :class="{ 'planner-closed': !showPlanner }">
+        <h2 style="margin-top:0; color:var(--gold)">Character Engineer</h2>
+        
+        <div class="planner-section" style="background:#222; padding:10px; border-radius:6px; border:1px solid #444;">
+            <h4 style="margin:0 0 10px 0; color:#fff">Character Stats</h4>
+            <div class="char-settings">
+                <div class="char-input">
+                    <label>Account Status</label>
+                    <select v-model.number="charStats.account">
+                        <option :value="1.0">Free (1.0x)</option>
+                        <option :value="1.2">Verified (1.2x)</option>
+                        <option :value="1.5">Subscribed (1.5x)</option>
+                    </select>
+                </div>
+                <div class="char-input">
+                    <label>FEP Cap (Target)</label>
+                    <input type="number" v-model.number="charStats.cap" placeholder="1000">
+                </div>
+                <div class="char-input">
+                    <label>Glut Multiplier</label>
+                    <input type="number" v-model.number="charStats.glut" step="0.1" placeholder="1.0">
+                </div>
+                <div class="char-input">
+                    <label>Table Bonus</label>
+                    <input type="number" v-model.number="charStats.table" step="0.01" placeholder="1.0">
+                </div>
+                <div class="char-input">
+                    <label>Realm Bonus</label>
+                    <input type="number" v-model.number="charStats.realm" step="0.1" placeholder="0.0">
+                </div>
+                <div class="char-input">
+                    <label>Satiation (%)</label>
+                    <input type="number" v-model.number="charStats.satiation" max="100" placeholder="100">
+                </div>
+            </div>
+        </div>
+
+        <div class="planner-section" style="background:#222; padding:10px; border-radius:6px; border:1px solid #444;">
+            <h4 style="margin:0 0 10px 0; color:#ffd700">Recipe Quality (Estimate)</h4>
+            <div class="char-input" style="margin-bottom:10px">
+                <label>Expected Quality</label>
+                <input type="number" v-model.number="charStats.quality" min="1" step="0.1" placeholder="15.0">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:10px">
+                <button @click="charStats.quality = 10" style="background:#333; color:#fff; border:1px solid #555; padding:5px; border-radius:4px; cursor:pointer; font-size:0.85em">Poor (10)</button>
+                <button @click="charStats.quality = 15" style="background:#333; color:#fff; border:1px solid #555; padding:5px; border-radius:4px; cursor:pointer; font-size:0.85em">Average (15)</button>
+                <button @click="charStats.quality = 20" style="background:#333; color:#fff; border:1px solid #555; padding:5px; border-radius:4px; cursor:pointer; font-size:0.85em">Good (20)</button>
+                <button @click="charStats.quality = 25" style="background:#333; color:#fff; border:1px solid #555; padding:5px; border-radius:4px; cursor:pointer; font-size:0.85em">Perfect (25)</button>
+            </div>
+            <small style="color:#888; font-size:0.75em; display:block; line-height:1.4">
+                ℹ️ Higher quality = more FEP (no limit)<br>
+                Use 10 for worst case<br>
+                Use 15 for typical ingredients<br>
+                Use 20-30 for high-quality<br>
+                Use 40+ for exceptional ingredients
+            </small>
+        </div>
+
+        <div class="planner-section">
+            <h4 style="margin:0 0 10px 0; color:#aaa">Current Menu</h4>
+            <div v-if="cart.length === 0" style="color:#666; font-style:italic">Your plate is empty. Add recipes with [+]</div>
+            <div v-for="(item, idx) in cart" class="cart-item">
+                <div style="flex:1">
+                    <div style="font-weight:bold; font-size:0.9em">[[ item.name ]]</div>
+                </div>
+                <div class="cart-controls">
+                    <button @click="changeQty(idx, -1)">-</button>
+                    <span style="margin:0 8px; font-family:'Roboto Mono'">[[ item.qty ]]</span>
+                    <button @click="changeQty(idx, 1)">+</button>
+                </div>
+            </div>
+            <button v-if="cart.length > 0" @click="cart = []" style="width:100%; margin-top:10px; background:#333; border:none; color:#ff6b6b; padding:5px; cursor:pointer">Clear Menu</button>
+        </div>
+
+        <div class="planner-section" v-if="cart.length > 0">
+            <h4 style="margin:0 0 10px 0; color:#aaa">Calculated Gains (Nurgling Logic)</h4>
+            
+            <div class="planner-row">
+                <span>Total Hunger:</span>
+                <span style="color:var(--gold); font-weight:bold">[[ totals.hunger.toFixed(2) ]]%</span>
+            </div>
+
+            <div class="planner-row total-highlight" style="margin-top:10px;">
+                <span>Expected FEP:</span>
+                <div style="text-align:right">
+                    <span style="color:var(--accent); font-size:1.2em">[[ totals.expectedFep.toFixed(2) ]]</span>
+                    <span class="sub-val">Raw Base: [[ totals.rawFep.toFixed(2) ]]</span>
+                </div>
+            </div>
+
+            <div v-if="charStats.cap > 0" style="margin-bottom:15px">
+                <div class="planner-row" style="font-size:0.8em; color:#aaa">
+                    <span>Target: [[ charStats.cap ]]</span>
+                    <span v-if="totals.expectedFep >= charStats.cap" style="color:var(--accent)">LEVEL UP! (+[[ (totals.expectedFep - charStats.cap).toFixed(1) ]])</span>
+                    <span v-else style="color:#ff6b6b">Remaining: [[ (charStats.cap - totals.expectedFep).toFixed(1) ]]</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" 
+                         :class="{ 'progress-over': totals.expectedFep > charStats.cap }"
+                         :style="{ width: Math.min(100, (totals.expectedFep / charStats.cap) * 100) + '%' }">
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:0.85em; color:#888; text-transform:uppercase;">Expected Stats (Chance)</div>
+            
+            <div v-for="stat in orderedStats" class="planner-row">
+                <span>[[ stat.name ]]:</span>
+                <div style="text-align:right;">
+                    <span class="fep-badge" :style="corStat(stat.name)" style="margin-right:5px">
+                        [[ stat.val.toFixed(2) ]]
+                    </span>
+                    <span style="font-size:0.85em; color:#888; font-family:'Roboto Mono'">
+                        [[ totals.expectedFep > 0 ? ((stat.val / totals.expectedFep) * 100).toFixed(1) : 0 ]]%
+                    </span>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="planner-section" v-if="cart.length > 0">
+            <h4 style="margin:0 0 10px 0; color:#aaa">Shopping List</h4>
+            <ul style="padding-left:20px; color:#aaa; font-size:0.9em">
+                <li v-for="(qty, name) in totals.ingredients">
+                    [[ qty ]]x [[ name ]]
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="header-controls">
+        <div class="panel">
+            <div style="display:flex; gap:15px;">
+                <div class="input-group" style="flex:1">
+                    <label>Search Query</label>
+                    <input v-model="filterText" @keyup.enter="buscar" placeholder="e.g.: ing:pumpkin str>20%">
+                </div>
+                <div class="input-group" style="width: 140px;">
+                    <label>Base FEP <</label>
+                    <input type="number" v-model="maxFep" @keyup.enter="buscar" placeholder="e.g.: 33">
+                </div>
+                <div class="input-group" style="width: 140px;">
+                    <label>Expected FEP < ⚡</label>
+                    <input type="number" v-model="maxExpectedFep" placeholder="e.g.: 100">
+                </div>
+            </div>
+            <button class="btn-search" @click="buscar">Find Recipes</button>
+        </div>
+        <div class="panel cheat-sheet">
+            <h3>Filter Examples</h3>
+            <span class="code-example" @click="addFilter('ing:bear')">ing:bear</span><br>
+            <span class="code-example" @click="addFilter('str2>0')">str2>0</span> (Str +2 only)<br>
+            <span class="code-example" @click="addFilter('fav:1')">fav:1</span><br>
+            <span class="code-example" @click="addFilter('name:roast')">name:roast</span>
+        </div>
+    </div>
+
+    <div v-if="loading" style="text-align:center; padding: 40px; color: #666;">🔥 Heating up...</div>
+
+    <table v-else>
+        <thead>
+            <tr>
+                <th width="3%">Add</th>
+                <th width="15%" @click="sort('name')">Recipe [[ seta('name') ]]</th>
+                <th width="5%" @click="sort('str')" title="Strength">STR [[ seta('str') ]]</th>
+                <th width="5%" @click="sort('agi')" title="Agility">AGI [[ seta('agi') ]]</th>
+                <th width="5%" @click="sort('int')" title="Intelligence">INT [[ seta('int') ]]</th>
+                <th width="5%" @click="sort('con')" title="Constitution">CON [[ seta('con') ]]</th>
+                <th width="5%" @click="sort('per')" title="Perception">PER [[ seta('per') ]]</th>
+                <th width="5%" @click="sort('cha')" title="Charisma">CHA [[ seta('cha') ]]</th>
+                <th width="5%" @click="sort('dex')" title="Dexterity">DEX [[ seta('dex') ]]</th>
+                <th width="5%" @click="sort('wil')" title="Will">WIL [[ seta('wil') ]]</th>
+                <th width="5%" @click="sort('psy')" title="Psyche">PSY [[ seta('psy') ]]</th>
+                <th width="7%" @click="sort('total')">Base FEP [[ seta('total') ]]</th>
+                <th width="8%" @click="sort('expected')" title="FEP with your character multipliers">Expected ⚡ [[ seta('expected') ]]</th>
+                <th width="6%" @click="sort('hunger')">Hunger [[ seta('hunger') ]]</th>
+                <th width="6%" @click="sort('efficiency')">FEP/H [[ seta('efficiency') ]]</th>
+                <th width="15%">Ingredients</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="r in listaFiltrada" :key="r.recipe_hash">
+                <td><button class="btn-add" @click="addToCart(r)" title="Add to Planner">+</button></td>
+                <td>
+                    <span v-if="r.is_favorite" style="color:gold">⭐</span>
+                    <span class="recipe-name">[[ r.item_name ]]</span>
+                    <span class="res-name">[[ r.resource_name ]]</span>
+                </td>
+                <!-- Colunas de Stats Individuais -->
+                <td :style="getStatStyle('Strength', r)">[[ getStatValue('Strength', r) ]]</td>
+                <td :style="getStatStyle('Agility', r)">[[ getStatValue('Agility', r) ]]</td>
+                <td :style="getStatStyle('Intelligence', r)">[[ getStatValue('Intelligence', r) ]]</td>
+                <td :style="getStatStyle('Constitution', r)">[[ getStatValue('Constitution', r) ]]</td>
+                <td :style="getStatStyle('Perception', r)">[[ getStatValue('Perception', r) ]]</td>
+                <td :style="getStatStyle('Charisma', r)">[[ getStatValue('Charisma', r) ]]</td>
+                <td :style="getStatStyle('Dexterity', r)">[[ getStatValue('Dexterity', r) ]]</td>
+                <td :style="getStatStyle('Will', r)">[[ getStatValue('Will', r) ]]</td>
+                <td :style="getStatStyle('Psyche', r)">[[ getStatValue('Psyche', r) ]]</td>
+                <!-- Colunas de FEP -->
+                <td><span class="total-val">[[ r.total_fep.toFixed(2) ]]</span></td>
+                <td>
+                    <span class="expected-val" style="color:#ffd700; font-weight:bold; font-family:'Roboto Mono'">
+                        [[ calcExpectedFep(r.total_fep).toFixed(2) ]]
+                    </span>
+                    <span style="font-size:0.7em; color:#666; display:block">
+                        [[ ((calcExpectedFep(r.total_fep) / r.total_fep) * 100).toFixed(0) ]]% of base
+                    </span>
+                </td>
+                <td>[[ r.hunger ]]%</td>
+                <td><span class="eff-val">[[ (r.total_fep / (r.hunger > 0 ? r.hunger : 1)).toFixed(2) ]]</span></td>
+                <!-- Coluna de Ingredientes -->
+                <td>
+                    <div class="ing-list">
+                          <div v-for="ing in r.ingredients" class="ing-item" @click.stop="setSearch('ing:' + ing.name)">
+                            [[ ing.name ]]: [[ ing.percentage.toFixed(0) ]]%
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Exclusion Panel -->
+    <div class="exclusion-panel" v-if="lista.length > 0">
+        <!-- Ingredients Section -->
+        <div class="exclusion-section">
+            <div class="exclusion-header">
+                <h3>Ingredients</h3>
+                <span class="exclusion-count">[[ availableIngredients.length ]]</span>
+            </div>
+            <div class="exclusion-controls">
+                <input type="text" v-model="ingredientSearch" placeholder="Search ingredients..." class="exclusion-search">
+                <button @click="excludeAllIngredients" class="btn-exclude-all" title="Exclude all ingredients">→</button>
+            </div>
+            <div class="exclusion-list">
+                <div v-if="availableIngredients.length === 0" class="empty-state">
+                    All ingredients excluded
+                </div>
+                <div v-for="ing in filteredAvailableIngredients" 
+                     :key="ing.name" 
+                     class="exclusion-item"
+                     @click="excludeIngredient(ing.name)"
+                     :title="'Used in ' + ing.count + ' recipes'">
+                    <span class="exclusion-item-name">[[ ing.name ]]</span>
+                    <span class="exclusion-item-count">[[ ing.count ]]</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Excluded Section -->
+        <div class="exclusion-section">
+            <div class="exclusion-header">
+                <h3>Excluded</h3>
+                <span class="exclusion-count">[[ totalExcluded ]]</span>
+            </div>
+            <div class="exclusion-controls">
+                <input type="text" v-model="excludedSearch" placeholder="Search excluded..." class="exclusion-search">
+                <button @click="includeAll" class="btn-include-all" title="Include all">←</button>
+            </div>
+            <div class="exclusion-list">
+                <div v-if="totalExcluded === 0" class="empty-state">
+                    No exclusions yet<br>
+                    <small>Click items to exclude them</small>
+                </div>
+                <div v-for="ing in filteredExcludedIngredients" 
+                     :key="ing" 
+                     class="exclusion-item excluded-item"
+                     @click="includeIngredient(ing)">
+                    <span class="exclusion-item-name">[[ ing ]]</span>
+                    <span style="color:var(--danger)">🗑</span>
+                </div>
+                <div v-for="recipe in filteredExcludedRecipes" 
+                     :key="recipe" 
+                     class="exclusion-item excluded-item"
+                     @click="includeRecipe(recipe)">
+                    <span class="exclusion-item-name">[[ recipe ]]</span>
+                    <span style="color:var(--danger)">🗑</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recipes Section -->
+        <div class="exclusion-section">
+            <div class="exclusion-header">
+                <h3>Recipes</h3>
+                <span class="exclusion-count">[[ availableRecipes.length ]]</span>
+            </div>
+            <div class="exclusion-controls">
+                <input type="text" v-model="recipeSearch" placeholder="Search recipes..." class="exclusion-search">
+                <button @click="excludeAllRecipes" class="btn-exclude-all" title="Exclude all recipes">→</button>
+            </div>
+            <div class="exclusion-list">
+                <div v-if="availableRecipes.length === 0" class="empty-state">
+                    All recipes excluded
+                </div>
+                <div v-for="recipe in filteredAvailableRecipes" 
+                     :key="recipe" 
+                     class="exclusion-item"
+                     @click="excludeRecipe(recipe)">
+                    <span class="exclusion-item-name">[[ recipe ]]</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        delimiters: ['[[', ']]'],  // Usar [[ ]] para evitar conflito com Jinja2
+        data() {
+            return {
+                filterText: '', maxFep: '', maxExpectedFep: '', lista: [], loading: false,
+                sortKey: 'efficiency', sortDir: 'DESC',
+                cart: [], showPlanner: true,
+                charStats: {
+                    account: 1.5, glut: 1.0, table: 1.0, realm: 0.0, satiation: 100, cap: 0, quality: 15.0
+                },
+                statColors: {
+                    'Strength': '#ff6b6b', 'Agility': '#4ecdc4', 'Intelligence': '#45b7d1',
+                    'Constitution': '#96ceb4', 'Perception': '#ffeead', 'Charisma': '#ff9f43',
+                    'Dexterity': '#a8d8ea', 'Will': '#aa66cc', 'Psyche': '#ffcc5c'
+                },
+                // Exclusion system
+                excludedIngredients: [],
+                excludedRecipes: [],
+                ingredientSearch: '',
+                recipeSearch: '',
+                excludedSearch: ''
+            }
+        },
+        computed: {
+            cartTotalItems() { return this.cart.reduce((acc, item) => acc + item.qty, 0); },
+            totals() {
+                let res = { hunger: 0, rawFep: 0, expectedFep: 0, stats: {}, ingredients: {} };
+                const coef = this.charStats.account;
+                const glut = this.charStats.glut;
+                const table = this.charStats.table;
+                const realm = this.charStats.realm;
+                const satMod = this.charStats.satiation / 100.0;
+                const quality = this.charStats.quality;
+                const quality_factor = Math.sqrt(quality / 10);
+
+                this.cart.forEach(item => {
+                    let qty = item.qty;
+                    let rawItemFep = item.recipe.total_fep;
+                    let adjusted_fep = rawItemFep * quality_factor;
+                    
+                    res.hunger += (item.recipe.hunger * qty * satMod);
+                    res.rawFep += (rawItemFep * qty);
+
+                    let term1 = coef * adjusted_fep * glut * table;
+                    let term2 = adjusted_fep * glut * table * realm;
+                    let itemExpected = (term1 + term2) * satMod;
+                    
+                    res.expectedFep += (itemExpected * qty);
+                    
+                    item.recipe.feps.forEach(f => {
+                        let cleanName = f.name.replace(' +', '');
+                        if (!res.stats[cleanName]) res.stats[cleanName] = 0;
+                        let statRaw = f.value;
+                        let adjusted_stat = statRaw * quality_factor;
+                        let statTerm1 = coef * adjusted_stat * glut * table;
+                        let statTerm2 = adjusted_stat * glut * table * realm;
+                        let statExpected = (statTerm1 + statTerm2) * satMod;
+                        res.stats[cleanName] += (statExpected * qty);
+                    });
+                    item.recipe.ingredients.forEach(ing => {
+                        if (!res.ingredients[ing.name]) res.ingredients[ing.name] = 0;
+                        res.ingredients[ing.name] += qty;
+                    });
+                });
+                return res;
+            },
+            // Computed property para ordenar os stats do maior para o menor
+            orderedStats() {
+                if (!this.totals.stats) return [];
+                return Object.entries(this.totals.stats)
+                    .map(([name, val]) => ({ name, val }))
+                    .sort((a, b) => b.val - a.val);
+            },
+            // Computed property para filtrar lista por Expected FEP
+            listaFiltrada() {
+                let results = this.lista;
+                
+                // Filtro por Expected FEP
+                if (this.maxExpectedFep && this.maxExpectedFep !== '') {
+                    const maxExp = parseFloat(this.maxExpectedFep);
+                    results = results.filter(r => {
+                        const expected = this.calcExpectedFep(r.total_fep);
+                        return expected <= maxExp;
+                    });
+                }
+                
+                // Aplicar exclusões
+                results = results.filter(r => {
+                    // Excluir se a receita está na lista de excluídas
+                    if (this.excludedRecipes.includes(r.item_name)) return false;
+                    
+                    // Excluir se contém ingrediente excluído
+                    if (r.ingredients) {
+                        const hasExcludedIngredient = r.ingredients.some(ing => 
+                            this.excludedIngredients.includes(ing.name)
+                        );
+                        if (hasExcludedIngredient) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                return results;
+            },
+            
+            // Exclusion System Computed Properties
+            availableIngredients() {
+                // Agregar ingredientes únicos das receitas filtradas (antes da exclusão)
+                const ingredientMap = new Map();
+                this.lista.forEach(recipe => {
+                    if (recipe.ingredients) {
+                        recipe.ingredients.forEach(ing => {
+                            if (!this.excludedIngredients.includes(ing.name)) {
+                                const count = ingredientMap.get(ing.name) || 0;
+                                ingredientMap.set(ing.name, count + 1);
+                            }
+                        });
+                    }
+                });
+                
+                return Array.from(ingredientMap.entries())
+                    .map(([name, count]) => ({ name, count }))
+                    .sort((a, b) => b.count - a.count);  // Ordenar por mais usado
+            },
+            
+            availableRecipes() {
+                // Receitas que não estão excluídas e não contêm ingredientes excluídos
+                return this.listaFiltrada
+                    .filter(r => !this.excludedRecipes.includes(r.item_name))
+                    .map(r => r.item_name)
+                    .sort();
+            },
+            
+            filteredAvailableIngredients() {
+                if (!this.ingredientSearch) return this.availableIngredients;
+                const search = this.ingredientSearch.toLowerCase();
+                return this.availableIngredients.filter(ing => 
+                    ing.name.toLowerCase().includes(search)
+                );
+            },
+            
+            filteredAvailableRecipes() {
+                if (!this.recipeSearch) return this.availableRecipes;
+                const search = this.recipeSearch.toLowerCase();
+                return this.availableRecipes.filter(recipe => 
+                    recipe.toLowerCase().includes(search)
+                );
+            },
+            
+            filteredExcludedIngredients() {
+                if (!this.excludedSearch) return this.excludedIngredients;
+                const search = this.excludedSearch.toLowerCase();
+                return this.excludedIngredients.filter(ing => 
+                    ing.toLowerCase().includes(search)
+                );
+            },
+            
+            filteredExcludedRecipes() {
+                if (!this.excludedSearch) return this.excludedRecipes;
+                const search = this.excludedSearch.toLowerCase();
+                return this.excludedRecipes.filter(recipe => 
+                    recipe.toLowerCase().includes(search)
+                );
+            },
+            
+            totalExcluded() {
+                return this.excludedIngredients.length + this.excludedRecipes.length;
+            }
+        },
+        watch: {
+            charStats: {
+                handler() {
+                    // Quando charStats muda, reordena se estiver ordenado por expected
+                    if (this.sortKey === 'expected' && this.lista.length > 0) {
+                        this.lista.sort((a, b) => {
+                            const expA = this.calcExpectedFep(a.total_fep);
+                            const expB = this.calcExpectedFep(b.total_fep);
+                            return this.sortDir === 'ASC' ? expA - expB : expB - expA;
+                        });
+                    }
+                },
+                deep: true  // Observa mudanças em propriedades aninhadas
+            }
+        },
+        mounted() { 
+            this.loadExclusions();
+            this.buscar();
+        },
+        methods: {
+            async buscar() {
+                this.loading = true;
+                let q = this.filterText;
+                if (this.maxFep) q += ` total<${this.maxFep}`;
+                const url = `/api/search?q=${encodeURIComponent(q)}&sort=${this.sortKey}&dir=${this.sortDir}`;
+                try {
+                    const req = await fetch(url);
+                    const res = await req.json();
+                    this.lista = res.results || [];
+                } catch(e) { console.error(e); }
+                this.loading = false;
+            },
+            calcExpectedFep(baseFep) {
+                const { account, glut, table, realm, satiation, quality } = this.charStats;
+                
+                // Ajustar FEP por Quality (Fórmula Oficial H&H: Raiz Quadrada)
+                const quality_factor = Math.sqrt(quality / 10);
+                const adjusted_fep = baseFep * quality_factor;
+                
+                // Aplicar multiplicadores
+                const satMod = satiation / 100.0;
+                const term1 = account * adjusted_fep * glut * table;
+                const term2 = adjusted_fep * glut * table * realm;
+                return (term1 + term2) * satMod;
+            },
+            addToCart(recipe) {
+                let existing = this.cart.find(c => c.hash === recipe.recipe_hash);
+                if (existing) { existing.qty++; } 
+                else { this.cart.push({ hash: recipe.recipe_hash, name: recipe.item_name, qty: 1, recipe: recipe }); }
+                if(!this.showPlanner) this.showPlanner = true;
+            },
+            changeQty(idx, amount) {
+                this.cart[idx].qty += amount;
+                if (this.cart[idx].qty <= 0) this.cart.splice(idx, 1);
+            },
+            addFilter(txt) { this.filterText = txt; this.buscar(); },
+            setSearch(txt) { this.filterText = txt; this.buscar(); },
+            sort(key) {
+                // Alternar direção ou definir nova chave
+                if (this.sortKey === key) this.sortDir = (this.sortDir === 'ASC' ? 'DESC' : 'ASC');
+                else { this.sortKey = key; this.sortDir = 'DESC'; }
+                
+                // Colunas que podem ser ordenadas client-side
+                const clientSideSort = ['expected', 'total', 'hunger', 'efficiency', 'str', 'agi', 'int', 'con', 'per', 'cha', 'dex', 'wil', 'psy'];
+                
+                if (clientSideSort.includes(key)) {
+                    // Ordenação client-side
+                    this.lista.sort((a, b) => {
+                        let valA, valB;
+                        
+                        if (key === 'expected') {
+                            valA = this.calcExpectedFep(a.total_fep);
+                            valB = this.calcExpectedFep(b.total_fep);
+                        } else if (key === 'total') {
+                            valA = a.total_fep;
+                            valB = b.total_fep;
+                        } else if (key === 'hunger') {
+                            valA = a.hunger;
+                            valB = b.hunger;
+                        } else if (key === 'efficiency') {
+                            valA = a.total_fep / (a.hunger > 0 ? a.hunger : 1);
+                            valB = b.total_fep / (b.hunger > 0 ? b.hunger : 1);
+                        } else {
+                            // Ordenação por stat individual
+                            const statMap = {
+                                'str': 'Strength',
+                                'agi': 'Agility',
+                                'int': 'Intelligence',
+                                'con': 'Constitution',
+                                'per': 'Perception',
+                                'cha': 'Charisma',
+                                'dex': 'Dexterity',
+                                'wil': 'Will',
+                                'psy': 'Psyche'
+                            };
+                            const statName = statMap[key];
+                            valA = parseFloat(this.getStatValue(statName, a)) || 0;
+                            valB = parseFloat(this.getStatValue(statName, b)) || 0;
+                        }
+                        
+                        return this.sortDir === 'ASC' ? valA - valB : valB - valA;
+                    });
+                } else {
+                    // Ordenação server-side para outras colunas (name)
+                    this.buscar();
+                }
+            },
+            seta(key) { if (this.sortKey !== key) return ''; return this.sortDir === 'ASC' ? '▲' : '▼'; },
+            corStat(n) {
+                const k = Object.keys(this.statColors).find(key => n.startsWith(key));
+                return k ? `border-left-color: ${this.statColors[k]}` : '';
+            },
+            getStatValue(statName, item) {
+                // Procura stat nos feps do item
+                const fep = item.feps.find(f => f.name.startsWith(statName));
+                if (!fep) return '';  // Célula vazia
+                
+                // Retorna valor ajustado por quality
+                const quality_factor = Math.sqrt(this.charStats.quality / 10);
+                return (fep.value * quality_factor).toFixed(2);
+            },
+            getStatStyle(statName, item) {
+                const value = this.getStatValue(statName, item);
+                
+                if (!value) {
+                    // Célula vazia: cor muito clara
+                    return {
+                        backgroundColor: 'rgba(50, 50, 50, 0.2)',
+                        color: '#666',
+                        textAlign: 'center',
+                        fontSize: '0.85em'
+                    };
+                }
+                
+                // Célula com valor: cor do stat
+                const statColors = {
+                    'Strength': { bg: 'rgba(220, 100, 100, 0.3)', text: '#ff8888' },
+                    'Agility': { bg: 'rgba(100, 100, 220, 0.3)', text: '#8888ff' },
+                    'Intelligence': { bg: 'rgba(100, 200, 200, 0.3)', text: '#88dddd' },
+                    'Constitution': { bg: 'rgba(200, 100, 200, 0.3)', text: '#dd88dd' },
+                    'Perception': { bg: 'rgba(220, 150, 100, 0.3)', text: '#ffaa88' },
+                    'Charisma': { bg: 'rgba(100, 200, 100, 0.3)', text: '#88dd88' },
+                    'Dexterity': { bg: 'rgba(200, 200, 100, 0.3)', text: '#dddd88' },
+                    'Will': { bg: 'rgba(220, 220, 80, 0.3)', text: '#eeee88' },
+                    'Psyche': { bg: 'rgba(180, 100, 220, 0.3)', text: '#cc88ff' }
+                };
+                
+                const color = statColors[statName];
+                const numValue = parseFloat(value);
+                const intensity = Math.min(numValue / 5, 1);  // Normalizar 0-1
+                
+                // Ajustar opacidade baseado na intensidade
+                const bgWithIntensity = color.bg.replace('0.3', (0.2 + intensity * 0.5).toFixed(2));
+                
+                return {
+                    backgroundColor: bgWithIntensity,
+                    color: color.text,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    fontSize: '0.9em',
+                    fontFamily: 'Roboto Mono, monospace'
+                };
+            },
+            
+            // Exclusion System Methods
+            excludeIngredient(ingredientName) {
+                if (!this.excludedIngredients.includes(ingredientName)) {
+                    this.excludedIngredients.push(ingredientName);
+                    this.saveExclusions();
+                }
+            },
+            
+            includeIngredient(ingredientName) {
+                const index = this.excludedIngredients.indexOf(ingredientName);
+                if (index > -1) {
+                    this.excludedIngredients.splice(index, 1);
+                    this.saveExclusions();
+                }
+            },
+            
+            excludeRecipe(recipeName) {
+                if (!this.excludedRecipes.includes(recipeName)) {
+                    this.excludedRecipes.push(recipeName);
+                    this.saveExclusions();
+                }
+            },
+            
+            includeRecipe(recipeName) {
+                const index = this.excludedRecipes.indexOf(recipeName);
+                if (index > -1) {
+                    this.excludedRecipes.splice(index, 1);
+                    this.saveExclusions();
+                }
+            },
+            
+            excludeAllIngredients() {
+                this.availableIngredients.forEach(ing => {
+                    if (!this.excludedIngredients.includes(ing.name)) {
+                        this.excludedIngredients.push(ing.name);
+                    }
+                });
+                this.saveExclusions();
+            },
+            
+            excludeAllRecipes() {
+                this.availableRecipes.forEach(recipe => {
+                    if (!this.excludedRecipes.includes(recipe)) {
+                        this.excludedRecipes.push(recipe);
+                    }
+                });
+                this.saveExclusions();
+            },
+            
+            includeAll() {
+                this.excludedIngredients = [];
+                this.excludedRecipes = [];
+                this.saveExclusions();
+            },
+            
+            saveExclusions() {
+                // Salvar no localStorage
+                localStorage.setItem('nurgling_excluded_ingredients', JSON.stringify(this.excludedIngredients));
+                localStorage.setItem('nurgling_excluded_recipes', JSON.stringify(this.excludedRecipes));
+            },
+            
+            loadExclusions() {
+                // Carregar do localStorage
+                const savedIngredients = localStorage.getItem('nurgling_excluded_ingredients');
+                const savedRecipes = localStorage.getItem('nurgling_excluded_recipes');
+                
+                if (savedIngredients) {
+                    try {
+                        this.excludedIngredients = JSON.parse(savedIngredients);
+                    } catch(e) {
+                        console.error('Error loading excluded ingredients:', e);
+                    }
+                }
+                
+                if (savedRecipes) {
+                    try {
+                        this.excludedRecipes = JSON.parse(savedRecipes);
+                    } catch(e) {
+                        console.error('Error loading excluded recipes:', e);
+                    }
+                }
+            }
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>

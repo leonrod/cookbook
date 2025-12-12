@@ -414,6 +414,20 @@ docker-compose up -d
 - ✅ Non-root container in Docker
 - ✅ Configurable CORS
 
+## 🙏 Acknowledgments
+
+This project was inspired by the cookbook feature from [Nurgling 2](https://github.com/Katodiy/nurgling2) by Katodiy, an advanced client for Haven & Hearth.
+
+**Inspired features**:
+- Recipe database structure and FEP calculations
+- Ingredient-based search and filtering system
+- Character stats integration for Expected FEP
+- Quality factor application in food calculations
+
+While Nurgling 2 provides an in-game cookbook as part of a complete client, this project offers a standalone web-based solution accessible from any browser, with additional features like meal planning, exclusion system, and persistent data storage.
+
+Special thanks to Katodiy and the Nurgling 2 project for the inspiration and reference implementation.
+
 ## 📝 License
 
 MIT License

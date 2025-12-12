@@ -1,52 +1,56 @@
-# Nurgling Cookbook Pro
+# Cookbook Pro
 
-Sistema de busca e gerenciamento de receitas com análise de atributos nutricionais (FEPs) e ingredientes.
+A Haven & Hearth recipe search and management system with nutritional attribute analysis (FEPs) and ingredients tracking.
 
 ![Status](https://img.shields.io/badge/status-production--ready-green)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![Flask](https://img.shields.io/badge/flask-3.0-lightgrey)
 
-## 📋 Índice
+## 📋 Table of Contents
 
-- [Características](#características)
-- [Requisitos](#requisitos)
-- [Instalação](#instalação)
-- [Configuração](#configuração)
-- [Deploy](#deploy)
-- [Uso](#uso)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+- [Usage](#usage)
 - [API](#api)
-- [Desenvolvimento](#desenvolvimento)
+- [Development](#development)
 - [Troubleshooting](#troubleshooting)
 
-## ✨ Características
+## ✨ Features
 
-- **Busca Avançada**: Sistema de filtros flexível para buscar receitas por ingredientes, atributos e valores
-- **Performance Otimizada**: Queries otimizadas com redução de 97% no número de consultas ao banco
-- **Segurança**: Validação de inputs, proteção contra SQL injection, rate limiting
-- **Logging Completo**: Sistema de logs robusto para monitoramento e debugging
-- **Production-Ready**: Configurado para deploy em produção com Gunicorn, Docker e systemd
-- **Interface Moderna**: UI responsiva e intuitiva com Vue.js
+- **Advanced Search**: Flexible filter system to search recipes by ingredients, attributes, and values
+- **Optimized Performance**: Optimized queries with 97% reduction in database calls
+- **Security**: Input validation, SQL injection protection, rate limiting
+- **Complete Logging**: Robust logging system for monitoring and debugging
+- **Production-Ready**: Configured for production deployment with Gunicorn, Docker, and systemd
+- **Modern Interface**: Responsive and intuitive UI with Vue.js
+- **Character Engineer**: Calculate expected FEP gains based on your character stats
+- **Exclusion System**: Exclude ingredients or recipes from search results
+- **Meal Planner**: Plan your meals and generate shopping lists
 
-### Correções Implementadas
+### Implemented Fixes
 
-Este projeto foi completamente refatorado para resolver problemas críticos:
+This project was completely refactored to solve critical issues:
 
-- ✅ **N+1 Query Problem**: Redução de 151 para 4 queries por requisição
-- ✅ **Vazamento de Conexões**: Context managers para gerenciamento seguro
-- ✅ **SQL Injection**: Validação por whitelist e parametrização
-- ✅ **Tratamento de Erros**: Logging adequado sem exposição de detalhes internos
-- ✅ **Configuração de Ambiente**: Suporte a múltiplos ambientes (dev, prod, test)
+- ✅ **N+1 Query Problem**: Reduced from 151 to 4 queries per request
+- ✅ **Connection Leaks**: Context managers for safe management
+- ✅ **SQL Injection**: Whitelist validation and parameterization
+- ✅ **Error Handling**: Proper logging without exposing internal details
+- ✅ **Environment Configuration**: Support for multiple environments (dev, prod, test)
+- ✅ **Expected FEP Calculation**: Fixed quality factor application bug
 
-## 🔧 Requisitos
+## 🔧 Requirements
 
 - Python 3.11+
 - SQLite3
-- 512MB RAM mínimo (recomendado: 1GB+)
-- 100MB espaço em disco
+- 512MB RAM minimum (recommended: 1GB+)
+- 100MB disk space
 
-### Dependências Python
+### Python Dependencies
 
-Todas as dependências estão listadas em `requirements.txt`:
+All dependencies are listed in `requirements.txt`:
 
 ```
 Flask==3.0.0
@@ -58,58 +62,58 @@ gevent==23.9.1
 python-dotenv==1.0.0
 ```
 
-## 📦 Instalação
+## 📦 Installation
 
-### 1. Clone o Repositório
+### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd nurgling-cookbook-pro
+git clone https://github.com/leonrod/cookbook.git
+cd cookbook
 ```
 
-### 2. Instale as Dependências
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure o Ambiente
+### 3. Configure Environment
 
 ```bash
-# Copie o arquivo de exemplo
+# Copy the example file
 cp .env.example .env
 
-# Edite o .env e configure as variáveis necessárias
+# Edit .env and configure necessary variables
 nano .env
 ```
 
-**IMPORTANTE**: Gere uma SECRET_KEY segura:
+**IMPORTANT**: Generate a secure SECRET_KEY:
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 4. Inicialize o Banco de Dados
+### 4. Initialize Database
 
 ```bash
-# Certifique-se de que food-info2.json está no diretório raiz
+# Make sure food-info2.json is in the root directory
 python scripts/setup_database.py
 ```
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
-### Variáveis de Ambiente
+### Environment Variables
 
-Edite o arquivo `.env` com suas configurações:
+Edit the `.env` file with your settings:
 
 ```bash
-# Ambiente
+# Environment
 FLASK_ENV=production  # development, production, testing
 
-# Segurança (OBRIGATÓRIO)
-SECRET_KEY=<sua-chave-secreta-aqui>
+# Security (REQUIRED)
+SECRET_KEY=<your-secret-key-here>
 
-# Banco de Dados
+# Database
 DB_PATH=nurglingdatabase.db
 
 # API
@@ -120,7 +124,7 @@ API_MAX_QUERY_LENGTH=500
 LOG_LEVEL=INFO
 LOG_FILE=logs/app.log
 
-# CORS (apenas se necessário)
+# CORS (only if needed)
 CORS_ENABLED=False
 CORS_ORIGINS=*
 
@@ -132,96 +136,123 @@ RATELIMIT_DEFAULT=100 per minute
 CACHE_TYPE=simple
 CACHE_DEFAULT_TIMEOUT=300
 
-# Servidor
+# Server
 PORT=5000
 WORKERS=4
 ```
 
-## 🚀 Deploy
+## 🚀 Deployment
 
-O projeto suporta múltiplos métodos de deploy:
+The project supports multiple deployment methods:
 
-### Deploy Local (Desenvolvimento)
+### Local Deployment (Development)
 
 ```bash
-# Modo debug
+# Debug mode
 FLASK_ENV=development python wsgi.py
 
-# Ou com Gunicorn
+# Or with Gunicorn
 ./scripts/deploy.sh local
 ```
 
-### Deploy com Docker
+### Deploy with Docker
 
 ```bash
-# Build e run
+# Build and run
 ./scripts/deploy.sh docker
 
-# Ou manualmente
-docker build -t nurgling-cookbook-pro .
-docker run -d -p 5000:5000 --env-file .env nurgling-cookbook-pro
+# Or manually
+docker build -t cookbook .
+docker run -d -p 5000:5000 --env-file .env cookbook
 ```
 
-### Deploy com Docker Compose
+### Deploy with Docker Compose
 
 ```bash
 ./scripts/deploy.sh docker-compose
 
-# Comandos úteis
-docker-compose logs -f        # Ver logs
-docker-compose restart        # Reiniciar
-docker-compose down          # Parar
+# Useful commands
+docker-compose logs -f        # View logs
+docker-compose restart        # Restart
+docker-compose down          # Stop
 ```
 
-### Deploy com Systemd (Linux)
+### Deploy with Systemd (Linux)
 
 ```bash
 sudo ./scripts/deploy.sh systemd
 
-# Gerenciar serviço
-sudo systemctl status nurgling-cookbook-pro
-sudo systemctl restart nurgling-cookbook-pro
-sudo journalctl -u nurgling-cookbook-pro -f
+# Manage service
+sudo systemctl status cookbook
+sudo systemctl restart cookbook
+sudo journalctl -u cookbook -f
 ```
 
-## 📖 Uso
+### Deploy to Render.com (Recommended)
 
-### Interface Web
+See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for detailed steps.
 
-Acesse `http://localhost:5000` no navegador.
+1. Sign up at https://render.com with your GitHub account
+2. Create a new Web Service
+3. Connect your GitHub repository
+4. Render will auto-detect configuration from `render.yaml`
+5. Click "Create Web Service"
+6. Your app will be live in 3-5 minutes!
 
-#### Exemplos de Filtros
+## 📖 Usage
 
-- `ing:pumpkin` - Receitas com abóbora
-- `str>20%` - Receitas com mais de 20% de Strength
-- `name:roast` - Receitas com "roast" no nome
-- `total<30` - Receitas com FEP total menor que 30
-- `fav:1` - Apenas receitas favoritas
+### Web Interface
 
-#### Combinando Filtros
+Access `http://localhost:5000` in your browser.
+
+#### Filter Examples
+
+- `ing:pumpkin` - Recipes with pumpkin
+- `str>20%` - Recipes with more than 20% Strength
+- `name:roast` - Recipes with "roast" in the name
+- `total<30` - Recipes with total FEP less than 30
+- `fav:1` - Favorite recipes only
+
+#### Combining Filters
 
 ```
 ing:pumpkin str>30% total<50
 ```
 
-### API REST
+### Character Engineer
+
+1. Set your character stats (Account type, Glut, Table, Realm, Satiation)
+2. Set expected recipe quality
+3. Search for recipes
+4. See calculated Expected FEP for each recipe
+5. Add recipes to your meal planner
+6. View total expected gains
+
+### Exclusion System
+
+1. Search for recipes
+2. Click on ingredients or recipes in the exclusion panels
+3. Excluded items will be removed from results
+4. Click again to include them back
+
+### REST API
 
 #### GET /api/search
 
-Busca receitas com filtros.
+Search recipes with filters.
 
-**Parâmetros:**
-- `q` (string): Query de busca
-- `sort` (string): Campo de ordenação (default: efficiency)
-- `dir` (string): Direção (ASC/DESC, default: DESC)
+**Parameters:**
+- `q` (string): Search query
+- `sort` (string): Sort field (default: efficiency)
+- `dir` (string): Direction (ASC/DESC, default: DESC)
 
-**Exemplo:**
+**Example:**
 
 ```bash
 curl "http://localhost:5000/api/search?q=ing:pumpkin&sort=total&dir=DESC"
 ```
 
-**Resposta:**
+**Response:**
 
 ```json
 {
@@ -247,7 +278,7 @@ curl "http://localhost:5000/api/search?q=ing:pumpkin&sort=total&dir=DESC"
 
 #### GET /api/stats
 
-Retorna estatísticas do banco de dados.
+Returns database statistics.
 
 ```bash
 curl http://localhost:5000/api/stats
@@ -255,101 +286,102 @@ curl http://localhost:5000/api/stats
 
 #### GET /health
 
-Health check para monitoramento.
+Health check for monitoring.
 
 ```bash
 curl http://localhost:5000/health
 ```
 
-## 🛠️ Desenvolvimento
+## 🛠️ Development
 
-### Estrutura do Projeto
+### Project Structure
 
 ```
-nurgling-cookbook-pro/
+cookbook/
 ├── app/
-│   ├── __init__.py          # Inicialização da aplicação
-│   ├── config.py            # Configurações
-│   ├── database.py          # Gerenciamento de BD
-│   ├── query_builder.py     # Construtor de queries
-│   └── routes.py            # Rotas da API
+│   ├── __init__.py          # Application initialization
+│   ├── config.py            # Configuration
+│   ├── database.py          # Database management
+│   ├── query_builder.py     # Query builder
+│   └── routes.py            # API routes
 ├── scripts/
-│   ├── setup_database.py    # Setup do BD
-│   └── deploy.sh            # Script de deploy
+│   ├── setup_database.py    # Database setup
+│   └── deploy.sh            # Deployment script
 ├── templates/
 │   └── index.html           # Frontend
-├── tests/                   # Testes (a implementar)
-├── logs/                    # Logs da aplicação
-├── .env                     # Variáveis de ambiente
-├── .env.example             # Exemplo de configuração
-├── .gitignore              # Arquivos ignorados
-├── Dockerfile              # Imagem Docker
-├── docker-compose.yml      # Orquestração Docker
-├── gunicorn.conf.py        # Configuração Gunicorn
-├── requirements.txt        # Dependências Python
-├── wsgi.py                 # Entry point WSGI
-└── README.md               # Esta documentação
+├── docs/                    # Documentation
+├── tests/                   # Tests (to implement)
+├── logs/                    # Application logs
+├── .env                     # Environment variables
+├── .env.example             # Configuration example
+├── .gitignore              # Ignored files
+├── Dockerfile              # Docker image
+├── docker-compose.yml      # Docker orchestration
+├── gunicorn.conf.py        # Gunicorn configuration
+├── requirements.txt        # Python dependencies
+├── wsgi.py                 # WSGI entry point
+└── README.md               # This documentation
 ```
 
-### Executar Testes
+### Run Tests
 
 ```bash
-# TODO: Implementar suite de testes
+# TODO: Implement test suite
 pytest tests/
 ```
 
-### Adicionar Novas Features
+### Add New Features
 
-1. Crie uma branch: `git checkout -b feature/nova-feature`
-2. Faça suas alterações
-3. Teste localmente: `FLASK_ENV=development python wsgi.py`
-4. Commit: `git commit -m "Add: nova feature"`
-5. Push: `git push origin feature/nova-feature`
+1. Create a branch: `git checkout -b feature/new-feature`
+2. Make your changes
+3. Test locally: `FLASK_ENV=development python wsgi.py`
+4. Commit: `git commit -m "Add: new feature"`
+5. Push: `git push origin feature/new-feature`
 
 ## 🐛 Troubleshooting
 
-### Banco de dados não encontrado
+### Database not found
 
 ```bash
 python scripts/setup_database.py --force
 ```
 
-### Erro de permissão no banco
+### Database permission error
 
 ```bash
 chmod 644 nurglingdatabase.db
 ```
 
-### Porta já em uso
+### Port already in use
 
 ```bash
-# Mude a porta no .env
+# Change port in .env
 PORT=8000
 
-# Ou especifique ao executar
+# Or specify when running
 PORT=8000 python wsgi.py
 ```
 
-### Logs não aparecem
+### Logs not appearing
 
 ```bash
-# Verifique se o diretório existe
+# Check if directory exists
 mkdir -p logs
 
-# Verifique permissões
+# Check permissions
 chmod 755 logs
 ```
 
-### Container Docker não inicia
+### Docker container won't start
 
 ```bash
-# Verifique logs
-docker logs nurgling-cookbook-pro
+# Check logs
+docker logs cookbook
 
-# Verifique se o banco existe
+# Check if database exists
 ls -lh nurglingdatabase.db
 
-# Reconstrua a imagem
+# Rebuild image
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
@@ -359,51 +391,57 @@ docker-compose up -d
 
 ### Benchmarks
 
-- **Query Simples**: ~2-5ms
-- **Query Complexa**: ~10-20ms
+- **Simple Query**: ~2-5ms
+- **Complex Query**: ~10-20ms
 - **Throughput**: ~500 req/s (4 workers)
-- **Memória**: ~50MB por worker
+- **Memory**: ~50MB per worker
 
-### Otimizações Implementadas
+### Implemented Optimizations
 
-- Queries em lote (4 queries vs 151)
-- Índices otimizados no SQLite
-- Cache de resultados
+- Batch queries (4 queries vs 151)
+- Optimized SQLite indexes
+- Result caching
 - Connection pooling
-- Preload de aplicação no Gunicorn
+- Application preload in Gunicorn
 
-## 🔒 Segurança
+## 🔒 Security
 
-- ✅ Parametrização de queries SQL
-- ✅ Validação de inputs por whitelist
-- ✅ Rate limiting configurável
-- ✅ Logs de auditoria
-- ✅ Secrets em variáveis de ambiente
-- ✅ Container não-root no Docker
-- ✅ CORS configurável
+- ✅ SQL query parameterization
+- ✅ Input validation by whitelist
+- ✅ Configurable rate limiting
+- ✅ Audit logs
+- ✅ Secrets in environment variables
+- ✅ Non-root container in Docker
+- ✅ Configurable CORS
 
-## 📝 Licença
+## 📝 License
 
-[Especifique a licença aqui]
+MIT License
 
-## 👥 Contribuindo
+## 👥 Contributing
 
-Contribuições são bem-vindas! Por favor:
+Contributions are welcome! Please:
 
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch for your feature
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
 
-## 📞 Suporte
+## 📞 Support
 
-Para problemas ou dúvidas:
+For issues or questions:
 
-- Abra uma issue no GitHub
-- Verifique a seção [Troubleshooting](#troubleshooting)
-- Consulte os logs em `logs/app.log`
+- Open an issue on GitHub
+- Check the [Troubleshooting](#troubleshooting) section
+- Check logs in `logs/app.log`
+
+## 🎮 About Haven & Hearth
+
+This tool is designed for [Haven & Hearth](https://www.havenandhearth.com/), a free-to-play MMORPG. It helps players optimize their food choices for character development by calculating expected FEP (Food Event Points) gains.
+
+**Database**: 875 recipes included
 
 ---
 
-**Desenvolvido com ❤️ para a comunidade**
+**Developed with ❤️ for the Haven & Hearth community**

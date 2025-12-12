@@ -37,7 +37,7 @@ logs/
 *.log
 
 # Database
-*.db
+# *.db - Commented out to include nurglingdatabase.db
 *.sqlite
 *.sqlite3
 

@@ -67,6 +67,8 @@
         .exclusion-controls { display: flex; gap: 8px; margin-bottom: 12px; }
         .exclusion-search { flex: 1; background: #111; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; font-size: 0.85em; }
         .exclusion-search:focus { border-color: var(--accent); outline: none; }
+        .btn-exclude-filtered { background: #333; color: #ff9500; border: 1px solid #ff9500; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: bold; margin-right: 4px; }
+        .btn-exclude-filtered:hover { background: #ff9500; color: black; }
         .btn-exclude-all, .btn-include-all { background: #333; color: var(--accent); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
         .btn-exclude-all:hover, .btn-include-all:hover { background: var(--accent); color: black; }
         .exclusion-list { max-height: 400px; overflow-y: auto; }
@@ -320,6 +322,7 @@
             </div>
             <div class="exclusion-controls">
                 <input type="text" v-model="ingredientSearch" placeholder="Search ingredients..." class="exclusion-search">
+                <button @click="excludeFilteredIngredients" class="btn-exclude-filtered" title="Exclude filtered ingredients">Exclude Filtered</button>
                 <button @click="excludeAllIngredients" class="btn-exclude-all" title="Exclude all ingredients">→</button>
             </div>
             <div class="exclusion-list">
@@ -359,11 +362,11 @@
                     <span class="exclusion-item-name">[[ ing ]]</span>
                     <span style="color:var(--danger)">🗑</span>
                 </div>
-                <div v-for="recipe in filteredExcludedRecipes" 
-                     :key="recipe" 
+                <div v-for="recipeHash in filteredExcludedRecipes" 
+                     :key="recipeHash" 
                      class="exclusion-item excluded-item"
-                     @click="includeRecipe(recipe)">
-                    <span class="exclusion-item-name">[[ recipe ]]</span>
+                     @click="includeRecipe(recipeHash)">
+                    <span class="exclusion-item-name">[[ getRecipeName(recipeHash) ]]</span>
                     <span style="color:var(--danger)">🗑</span>
                 </div>
             </div>
@@ -377,6 +380,7 @@
             </div>
             <div class="exclusion-controls">
                 <input type="text" v-model="recipeSearch" placeholder="Search recipes..." class="exclusion-search">
+                <button @click="excludeFilteredRecipes" class="btn-exclude-filtered" title="Exclude filtered recipes">Exclude Filtered</button>
                 <button @click="excludeAllRecipes" class="btn-exclude-all" title="Exclude all recipes">→</button>
             </div>
             <div class="exclusion-list">
@@ -384,10 +388,10 @@
                     All recipes excluded
                 </div>
                 <div v-for="recipe in filteredAvailableRecipes" 
-                     :key="recipe" 
+                     :key="recipe.hash" 
                      class="exclusion-item"
-                     @click="excludeRecipe(recipe)">
-                    <span class="exclusion-item-name">[[ recipe ]]</span>
+                     @click="excludeRecipe(recipe.hash)">
+                    <span class="exclusion-item-name">[[ recipe.name ]]</span>
                 </div>
             </div>
         </div>
@@ -483,12 +487,12 @@
                     });
                 }
                 
-                // Aplicar exclusões
+                  // Aplicar exclusões
                 results = results.filter(r => {
-                    // Excluir se a receita está na lista de excluídas
-                    if (this.excludedRecipes.includes(r.item_name)) return false;
-                    
-                    // Excluir se contém ingrediente excluído
+                    // Excluir receitas diretamente excluídas
+                    if (this.excludedRecipes.includes(r.recipe_hash)) {
+                        return false;
+                    } // Excluir se contém ingrediente excluído
                     if (r.ingredients) {
                         const hasExcludedIngredient = r.ingredients.some(ing => 
                             this.excludedIngredients.includes(ing.name)
@@ -525,9 +529,9 @@
             availableRecipes() {
                 // Receitas que não estão excluídas e não contêm ingredientes excluídos
                 return this.listaFiltrada
-                    .filter(r => !this.excludedRecipes.includes(r.item_name))
-                    .map(r => r.item_name)
-                    .sort();
+                    .filter(r => !this.excludedRecipes.includes(r.recipe_hash))
+                    .map(r => ({ hash: r.recipe_hash, name: r.item_name }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
             },
             
             filteredAvailableIngredients() {
@@ -542,7 +546,7 @@
                 if (!this.recipeSearch) return this.availableRecipes;
                 const search = this.recipeSearch.toLowerCase();
                 return this.availableRecipes.filter(recipe => 
-                    recipe.toLowerCase().includes(search)
+                    recipe.name.toLowerCase().includes(search)
                 );
             },
             
@@ -557,9 +561,11 @@
             filteredExcludedRecipes() {
                 if (!this.excludedSearch) return this.excludedRecipes;
                 const search = this.excludedSearch.toLowerCase();
-                return this.excludedRecipes.filter(recipe => 
-                    recipe.toLowerCase().includes(search)
-                );
+                // Encontrar nomes das receitas excluídas para filtrar
+                return this.excludedRecipes.filter(hash => {
+                    const recipe = this.lista.find(r => r.recipe_hash === hash);
+                    return recipe && recipe.item_name.toLowerCase().includes(search);
+                });
             },
             
             totalExcluded() {
@@ -746,19 +752,28 @@
                 }
             },
             
-            excludeRecipe(recipeName) {
-                if (!this.excludedRecipes.includes(recipeName)) {
-                    this.excludedRecipes.push(recipeName);
+            excludeRecipe(recipeHash) {
+                if (!this.excludedRecipes.includes(recipeHash)) {
+                    this.excludedRecipes.push(recipeHash);
                     this.saveExclusions();
                 }
             },
             
-            includeRecipe(recipeName) {
-                const index = this.excludedRecipes.indexOf(recipeName);
+            includeRecipe(recipeHash) {
+                const index = this.excludedRecipes.indexOf(recipeHash);
                 if (index > -1) {
                     this.excludedRecipes.splice(index, 1);
                     this.saveExclusions();
                 }
+            },
+            
+            excludeFilteredIngredients() {
+                this.filteredAvailableIngredients.forEach(ing => {
+                    if (!this.excludedIngredients.includes(ing.name)) {
+                        this.excludedIngredients.push(ing.name);
+                    }
+                });
+                this.saveExclusions();
             },
             
             excludeAllIngredients() {
@@ -770,10 +785,19 @@
                 this.saveExclusions();
             },
             
+            excludeFilteredRecipes() {
+                this.filteredAvailableRecipes.forEach(recipe => {
+                    if (!this.excludedRecipes.includes(recipe.hash)) {
+                        this.excludedRecipes.push(recipe.hash);
+                    }
+                });
+                this.saveExclusions();
+            },
+            
             excludeAllRecipes() {
                 this.availableRecipes.forEach(recipe => {
-                    if (!this.excludedRecipes.includes(recipe)) {
-                        this.excludedRecipes.push(recipe);
+                    if (!this.excludedRecipes.includes(recipe.hash)) {
+                        this.excludedRecipes.push(recipe.hash);
                     }
                 });
                 this.saveExclusions();
@@ -811,6 +835,11 @@
                         console.error('Error loading excluded recipes:', e);
                     }
                 }
+            },
+            
+            getRecipeName(recipeHash) {
+                const recipe = this.lista.find(r => r.recipe_hash === recipeHash);
+                return recipe ? recipe.item_name : recipeHash;
             }
         }
     }).mount('#app')
